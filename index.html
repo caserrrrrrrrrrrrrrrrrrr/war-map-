@@ -82,12 +82,16 @@
 
   firebase.initializeApp(firebaseConfig);
   var db = firebase.database();
+  // 🔐 LEADER MODE
+const isLeader = new URLSearchParams(window.location.search).get('leader') === '1';
+
 
   const map = document.getElementById('mapWrapper');
   const log = document.getElementById('log');
 
   // ADD MARKER
   map.addEventListener('click', e => {
+  if (!isLeader) return; // viewers cannot add markers
     const rect = map.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -106,10 +110,7 @@
     marker.style.top = data.y + 'px';
     marker.textContent = `${data.squad.toUpperCase()} | ${data.command} | ${data.time}`;
 
-    marker.oncontextmenu = e => {
-      e.preventDefault();
-      db.ref('markers/' + id).remove();
-    };
+    marker.oncontextmenu = e => {if (!isLeader) return;e.preventDefault();db.ref('markers/' + id).remove();};
 
     marker.dataset.id = id;
     map.appendChild(marker);
@@ -132,8 +133,11 @@
   });
 
   function clearAll() {
-    db.ref('markers').remove();
-  }
+  if (!isLeader) return;
+  db.ref('markers').remove();
+}
+
 </script>
 </body>
 </html>
+

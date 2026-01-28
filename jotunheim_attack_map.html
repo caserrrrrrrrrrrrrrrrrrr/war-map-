@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LIVE Hardcore Attack Planner – Squad Coordination</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <style>
+    body { margin:0; font-family:Arial,sans-serif; background:#0b0b0b; color:#fff; }
+    #container { display:flex; height:100vh; }
+    #mapWrapper { flex:3; position:relative; background:#000; }
+    #mapWrapper img { width:100%; height:100%; object-fit:contain; }
+    .marker { position:absolute; transform:translate(-50%,-50%); padding:4px 6px; border-radius:6px; font-size:11px; color:#fff; cursor:pointer; white-space:nowrap; }
+    .squad1 { background:#1e90ff; }
+    .squad2 { background:#ff4d4d; }
+    #panel { flex:1; background:#141414; padding:12px; border-left:2px solid #333; }
+    h2 { margin-top:0; font-size:18px; }
+    label { display:block; margin-top:8px; font-size:13px; }
+    select, button { width:100%; margin-top:4px; padding:6px; font-size:13px; }
+    ul { list-style:none; padding:0; font-size:12px; }
+    li { border-bottom:1px solid #333; padding:4px 0; }
+  </style>
+</head>
+<body>
+<div id="container">
+  <div id="mapWrapper">
+    <img src="be0caba5-1339-47da-b6c9-d6695b099a05.png" />
+  </div>
+  <div id="panel">
+    <h2>LIVE Hardcore Orders</h2>
+
+    <label>Squad</label>
+    <select id="squad">
+      <option value="squad1">Squad 1 – MAIN FORCE</option>
+      <option value="squad2">Squad 2 – FLANK / SUPPORT</option>
+    </select>
+
+    <label>Command</label>
+    <select id="command">
+      <option>Main Rally</option>
+      <option>Primary Attack</option>
+      <option>Hold Position</option>
+      <option>Flank Attack</option>
+      <option>Apply Pressure</option>
+      <option>Final Assault</option>
+      <option>Intercept</option>
+      <option>Retreat & Regroup</option>
+    </select>
+
+    <label>Timing (UTC)</label>
+    <select id="time">
+      <option>NOW</option>
+      <option>+1 min</option>
+      <option>+2 min</option>
+      <option>12:00 UTC</option>
+    </select>
+
+    <button onclick="clearAll()">Clear All</button>
+
+    <h3>Live Orders</h3>
+    <ul id="log"></ul>
+  </div>
+</div>
+
+<script>
+  // 🔴 FIREBASE CONFIG – REPLACE databaseURL WITH YOUR OWN
+  const firebaseConfig = {
+    databaseURL: "PASTE_YOUR_FIREBASE_DATABASE_URL_HERE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const map = document.getElementById('mapWrapper');
+  const log = document.getElementById('log');
+
+  // ADD MARKER (LEADER ACTION)
+  map.addEventListener('click', e => {
+    const rect = map.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const squad = document.getElementById('squad').value;
+    const command = document.getElementById('command').value;
+    const time = document.getElementById('time').value;
+
+    db.ref('markers').push({ squad, command, time, x, y });
+  });
+
+  // DRAW MARKER
+  function drawMarker(id, data) {
+    const marker = document.createElement('div');
+    marker.className = 'marker ' + data.squad;
+    marker.style.left = data.x + 'px';
+    marker.style.top = data.y + 'px';
+    marker.textContent = `${data.squad.toUpperCase()} | ${data.command} | ${data.time}`;
+
+    // RIGHT CLICK = DELETE (LEADER)
+    marker.oncontextmenu = e => {
+      e.preventDefault();
+      db.ref('markers/' + id).remove();
+    };
+
+    marker.dataset.id = id;
+    map.appendChild(marker);
+
+    const li = document.createElement('li');
+    li.id = 'log-' + id;
+    li.textContent = `${data.squad.toUpperCase()} → ${data.command} @ ${data.time}`;
+    log.appendChild(li);
+  }
+
+  // LIVE SYNC – ADD
+  db.ref('markers').on('child_added', snap => {
+    drawMarker(snap.key, snap.val());
+  });
+
+  // LIVE SYNC – REMOVE
+  db.ref('markers').on('child_removed', snap => {
+    const marker = document.querySelector(`[data-id="${snap.key}"]`);
+    const li = document.getElementById('log-' + snap.key);
+    if (marker) marker.remove();
+    if (li) li.remove();
+  });
+
+  function clearAll() {
+    db.ref('markers').remove();
+  }
+</script>
+</body>
+</html>

@@ -12,7 +12,8 @@
     body { margin:0; font-family:Arial,sans-serif; background:#0b0b0b; color:#fff; }
     #container { display:flex; height:100vh; }
     #mapWrapper { flex:3; position:relative; background:#000; }
-    #mapWrapper img { width:100%; height:100%; object-fit:contain; }
+    #mapWrapper img { width:100%; height:100%; object-fit:contain;pointer-events: none; }
+
     .marker { position:absolute; transform:translate(-50%,-50%); padding:4px 6px; border-radius:6px; font-size:11px; color:#fff; cursor:pointer; white-space:nowrap; }
     .squad1 { background:#1e90ff; }
     .squad2 { background:#ff4d4d; }
@@ -68,7 +69,8 @@
 <script>
   // 🔴 FIREBASE CONFIG – REPLACE databaseURL WITH YOUR OWN
   const firebaseConfig = {
-    databaseURL: "PASTE_YOUR_FIREBASE_DATABASE_URL_HERE"
+    databaseURL: "https://interactive-map-boj---fate-war-default-rtdb.firebaseio.com
+"
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
@@ -131,3 +133,4 @@
 </script>
 </body>
 </html>
+

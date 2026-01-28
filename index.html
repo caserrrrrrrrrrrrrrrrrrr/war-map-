@@ -14,9 +14,19 @@
     #mapWrapper { flex:3; position:relative; background:#000; }
     #mapWrapper img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
 
-    .marker { position:absolute; transform:translate(-50%,-50%); padding:4px 6px; border-radius:6px; font-size:11px; color:#fff; cursor:pointer; white-space:nowrap; }
+    .marker {
+      position:absolute;
+      transform:translate(-50%,-50%);
+      padding:4px 6px;
+      border-radius:6px;
+      font-size:11px;
+      color:#fff;
+      cursor:pointer;
+      white-space:nowrap;
+    }
     .squad1 { background:#1e90ff; }
     .squad2 { background:#ff4d4d; }
+
     #panel { flex:1; background:#141414; padding:12px; border-left:2px solid #333; }
     h2 { margin-top:0; font-size:18px; }
     label { display:block; margin-top:8px; font-size:13px; }
@@ -29,7 +39,7 @@
 <body>
 <div id="container">
   <div id="mapWrapper">
-    <img src="be0caba5-1339-47da-b6c9-d6695b099a05.png">
+    <img id="mapImage" src="be0caba5-1339-47da-b6c9-d6695b099a05.png">
   </div>
 
   <div id="panel">
@@ -69,7 +79,7 @@
 </div>
 
 <script>
-  // ✅ FULL FIREBASE CONFIG (FIXED)
+  // 🔥 FIREBASE CONFIG
   var firebaseConfig = {
     apiKey: "AIzaSyB3vWVVBjQrxhhvGjTRioVQyrRo6mBNa58",
     authDomain: "interactive-map-boj---fate-war.firebaseapp.com",
@@ -82,35 +92,49 @@
 
   firebase.initializeApp(firebaseConfig);
   var db = firebase.database();
-  // 🔐 LEADER MODE
-const isLeader = new URLSearchParams(window.location.search).get('leader') === '1';
 
+  // 🔐 LEADER MODE
+  const isLeader = new URLSearchParams(window.location.search).get('leader') === '1';
 
   const map = document.getElementById('mapWrapper');
+  const img = document.getElementById('mapImage');
   const log = document.getElementById('log');
 
-  // ADD MARKER
+  // ADD MARKER (PERCENT-BASED, MOBILE SAFE)
   map.addEventListener('click', e => {
-  if (!isLeader) return; // viewers cannot add markers
-    const rect = map.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (!isLeader) return;
+
+    const rect = img.getBoundingClientRect();
+    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+    const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+    if (xPercent < 0 || yPercent < 0 || xPercent > 100 || yPercent > 100) return;
 
     const squad = document.getElementById('squad').value;
     const command = document.getElementById('command').value;
     const time = document.getElementById('time').value;
 
-    db.ref('markers').push({ squad, command, time, x, y });
+    db.ref('markers').push({
+      squad,
+      command,
+      time,
+      x: xPercent,
+      y: yPercent
+    });
   });
 
   function drawMarker(id, data) {
     const marker = document.createElement('div');
     marker.className = 'marker ' + data.squad;
-    marker.style.left = data.x + 'px';
-    marker.style.top = data.y + 'px';
+    marker.style.left = data.x + '%';
+    marker.style.top = data.y + '%';
     marker.textContent = `${data.squad.toUpperCase()} | ${data.command} | ${data.time}`;
 
-    marker.oncontextmenu = e => {if (!isLeader) return;e.preventDefault();db.ref('markers/' + id).remove();};
+    marker.oncontextmenu = e => {
+      if (!isLeader) return;
+      e.preventDefault();
+      db.ref('markers/' + id).remove();
+    };
 
     marker.dataset.id = id;
     map.appendChild(marker);
@@ -133,11 +157,9 @@ const isLeader = new URLSearchParams(window.location.search).get('leader') === '
   });
 
   function clearAll() {
-  if (!isLeader) return;
-  db.ref('markers').remove();
-}
-
+    if (!isLeader) return;
+    db.ref('markers').remove();
+  }
 </script>
 </body>
 </html>
-

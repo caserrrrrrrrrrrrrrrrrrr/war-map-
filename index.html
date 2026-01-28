@@ -33,6 +33,32 @@
     select, button { width:100%; margin-top:4px; padding:6px; font-size:13px; }
     ul { list-style:none; padding:0; font-size:12px; }
     li { border-bottom:1px solid #333; padding:4px 0; }
+
+    /* 📱 MOBILE PORTRAIT FIX */
+    @media (orientation: portrait) {
+      #container {
+        flex-direction: column;
+        height: auto;
+      }
+
+      #mapWrapper {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        height: auto;
+      }
+
+      #mapWrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      #panel {
+        width: 100%;
+        border-left: none;
+        border-top: 2px solid #333;
+      }
+    }
   </style>
 </head>
 
@@ -79,7 +105,6 @@
 </div>
 
 <script>
-  // 🔥 FIREBASE CONFIG
   var firebaseConfig = {
     apiKey: "AIzaSyB3vWVVBjQrxhhvGjTRioVQyrRo6mBNa58",
     authDomain: "interactive-map-boj---fate-war.firebaseapp.com",
@@ -93,14 +118,12 @@
   firebase.initializeApp(firebaseConfig);
   var db = firebase.database();
 
-  // 🔐 LEADER MODE
   const isLeader = new URLSearchParams(window.location.search).get('leader') === '1';
 
   const map = document.getElementById('mapWrapper');
   const img = document.getElementById('mapImage');
   const log = document.getElementById('log');
 
-  // ADD MARKER (PERCENT-BASED, MOBILE SAFE)
   map.addEventListener('click', e => {
     if (!isLeader) return;
 
@@ -114,13 +137,7 @@
     const command = document.getElementById('command').value;
     const time = document.getElementById('time').value;
 
-    db.ref('markers').push({
-      squad,
-      command,
-      time,
-      x: xPercent,
-      y: yPercent
-    });
+    db.ref('markers').push({ squad, command, time, x: xPercent, y: yPercent });
   });
 
   function drawMarker(id, data) {
@@ -145,15 +162,10 @@
     log.appendChild(li);
   }
 
-  db.ref('markers').on('child_added', snap => {
-    drawMarker(snap.key, snap.val());
-  });
-
+  db.ref('markers').on('child_added', snap => drawMarker(snap.key, snap.val()));
   db.ref('markers').on('child_removed', snap => {
-    const marker = document.querySelector(`[data-id="${snap.key}"]`);
-    const li = document.getElementById('log-' + snap.key);
-    if (marker) marker.remove();
-    if (li) li.remove();
+    document.querySelector(`[data-id="${snap.key}"]`)?.remove();
+    document.getElementById('log-' + snap.key)?.remove();
   });
 
   function clearAll() {
